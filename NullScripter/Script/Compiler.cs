@@ -6,15 +6,18 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text.RegularExpressions;
 
+using NullScripter;
+
 #warning under construction. : Analyse, Parse, Generate
 namespace NullScripter.Script
 {
     class Compiler
     {
+        #region Declarement
         private static List<string> FunctionList;
         private static Dictionary<string, VariableType> VariableTable;
         private static bool firstfunction;
-        private static string CR;
+        private static string CR = "\r\n";
 
         private enum VariableType
         { Double, String }
@@ -26,16 +29,13 @@ namespace NullScripter.Script
             Function,
             Text};
         private enum SyntaxType 
-        { LabelDeclear, MacroDeclear, LiteralDeclear, NumericDeclear, NumericExpress };
+        { LabelDeclear, MacroDeclear, LiteralDeclear, NumericDeclear, NumericExpress, FunctionCall };
         private enum AutomataStatus 
         { Initial };
         private enum BracketStatus
         { Opened, Closed };
-
-        public Compiler ()
-        {
-            InitialList();
-        }
+        #endregion
+        #region Initializing
         private void InitialList ()
         {
             FunctionList = new List<string>();
@@ -43,16 +43,19 @@ namespace NullScripter.Script
 
             VariableTable = new Dictionary<string, VariableType>(); 
         }
-
-        /// <summary>
-        /// return compiled JAVA code.
-        /// </summary>
-        /// <param name="str">NullScript code</param>
-        /// <returns>JAVA code</returns>
+        #endregion
+        #region .ctor
+        public Compiler()
+        {
+            InitialList();
+        }
+        #endregion
+        
         public string Compile(string str)
         {
-            str += "\r\n";
-
+            #region Initializing
+            Debug.CR();
+            Debug.WriteLine("Compiling...");
             firstfunction = true;
 
             bool crashed = false;
@@ -62,16 +65,22 @@ namespace NullScripter.Script
             string packet = null;
             string declearment = null;
 
-            string basic = "class NullScript\r\n{\r\n";
+            string basic = "class NullScript" + CR + "{" + CR;
 
-            MatchCollection mc;
             Regex CRRegex = new Regex(@"(.*?)\r\n");
             Regex SPRegex = new Regex(@"(.*?)\s+?");
             Regex LiteralRegex = new Regex("\" .*? \"", RegexOptions.IgnorePatternWhitespace);
 
             int col = -1;
 
+            string chunk = null;
+            BracketStatus bracketstatus = BracketStatus.Closed;
+            List<string> scriptchunk = new List<string>();
+            #endregion
+
+            #region Preprocessing Scripts
             // Preprocessing : Blank
+            str += CR;
             str = Regex.Replace(str, @"[\ \t]* [<] [\ \t]*", "< ", RegexOptions.IgnorePatternWhitespace);
             str = Regex.Replace(str, @"[\ \t]* [>] [\ \t]*", " >", RegexOptions.IgnorePatternWhitespace);
             str = Regex.Replace(str, @"[\ \t]* [,] [\ \t]*", " , ", RegexOptions.IgnorePatternWhitespace);
@@ -82,14 +91,9 @@ namespace NullScripter.Script
             str = Regex.Replace(str, @"[\ \t]* [=] [\ \t]*", " = ", RegexOptions.IgnorePatternWhitespace);
             str = Regex.Replace(str, @"[\ \t]* [&]{2} [\ \t]*", " && ", RegexOptions.IgnorePatternWhitespace);
             str = Regex.Replace(str, @"[\ \t]* [|][2} [\ \t]*", " || ", RegexOptions.IgnorePatternWhitespace);
-
-            mc = CRRegex.Matches(str);
-            string chunk = null;
-            BracketStatus bracketstatus = BracketStatus.Closed;
-            List<string> scriptchunk = new List<string>();
-
-            // Reforming scripts
-            foreach (Match element in mc)
+            #endregion
+            #region Reforming Scripts
+            foreach (Match element in CRRegex.Matches(str))
             {
                 string temp = element.Groups[1].Value;
                 // Checking Blank Column
@@ -117,7 +121,7 @@ namespace NullScripter.Script
 
                         bracketstatus = BracketStatus.Closed;
 
-                        chunk += temp;
+                        chunk += " " + temp;
                         scriptchunk.Add(chunk);
                         chunk = null;
                     }
@@ -131,37 +135,48 @@ namespace NullScripter.Script
                         chunk = null;
                     }
                     else
-                        chunk += temp;
+                        chunk += " " + temp;
                 }
             }
-            scriptchunk.Add(chunk);
+            if (chunk != null)
+                scriptchunk.Add(chunk);
 
-            // Compile
-            mc = CRRegex.Matches(str);
-            foreach (Match element in mc)
+            Debug.CR();
+            Debug.WriteLine("Reformed Script :");
+            foreach (string e in scriptchunk)
+                Debug.WriteLine(e);
+            #endregion
+
+            #region Compiling
+            foreach (string element in scriptchunk)
             {
-                CR = "\r\n";
-
                 try
                 {
                     packet = null;
                     col++;
 
                     // Checking Blank Column
-                    if (Regex.IsMatch(element.Groups[0].Value, @"^  \s*  $", RegexOptions.IgnorePatternWhitespace))
+                    if (Regex.IsMatch(element, @"^  \s*  $", RegexOptions.IgnorePatternWhitespace))
                         continue;
 
-                    MatchCollection mc2 = SPRegex.Matches(element.Groups[1].Value + " ");
+                    MatchCollection mc = SPRegex.Matches(element + " ");
                     List<TokenType> typelist = new List<TokenType>();
 
-                    foreach (Match e in mc2)
+                    for (int i = 0; i < mc.Count; i++)
                     {
-                        string token = e.Groups[1].Value;
-                        typelist.Add(Analyse(token));
+#warning Scaffolding
+                        string token = mc[i].Groups[1].Value;
+                        typelist.Add(Analyse(token, i == 0, i == mc.Count - 1));
                     }
 
+                    Debug.CR();
+                    Debug.WriteLine("TypeList of " + element);
+                    foreach (TokenType e in typelist)
+                        Debug.WriteLine(e.ToString());
+
                     // Generate Code
-                    packet = GenerateCode(Parse(typelist), typelist, mc2);
+                    packet = GenerateCode(Parse(typelist), typelist, mc);
+                    Debug.WriteLine("Generated Packet : " + packet);
                 }
                 catch (CompileError e)
                 {
@@ -174,9 +189,19 @@ namespace NullScripter.Script
                 script += packet;
             }
 
+            #endregion
+            #region Compile Error Handing
+            Debug.CR();
             if (crashed)
+            {
+                Debug.WriteLine("Crashed.");
                 throw cec;
+            }
+            else
+                Debug.WriteLine("Compiled.");
+            #endregion
 
+            #region Declarement Handling
             foreach (KeyValuePair<string, VariableType> e in VariableTable)
             {
                 switch(e.Value)
@@ -193,37 +218,42 @@ namespace NullScripter.Script
                         throw new NotImplementedException();
                 }
 
-                declearment += e.Key.Replace("$", "_") + ";\r\n";
+                declearment += e.Key.Replace("$", "_") + ";" + CR;
             }
+            #endregion
 
+            #region Proprecessing
             // Proprecessing : Blank (For legibillity)
-            script = Regex.Replace(script, @"[\ \t]* [,] [\ \t]*", ", ", RegexOptions.IgnorePatternWhitespace);
-            script = Regex.Replace(script, @"[\ \t]* [+] [\ \t]*", " + ", RegexOptions.IgnorePatternWhitespace);
-            script = Regex.Replace(script, @"[\ \t]* [-] [\ \t]*", " - ", RegexOptions.IgnorePatternWhitespace);
-            script = Regex.Replace(script, @"[\ \t]* [*] [\ \t]*", " * ", RegexOptions.IgnorePatternWhitespace);
-            script = Regex.Replace(script, @"[\ \t]* [/] [\ \t]*", " / ", RegexOptions.IgnorePatternWhitespace);
-            script = Regex.Replace(script, @"[\ \t]* [=] [\ \t]*", " = ", RegexOptions.IgnorePatternWhitespace);
-            script = Regex.Replace(script, @"[\ \t]* [&]{2} [\ \t]*", " && ", RegexOptions.IgnorePatternWhitespace);
-            script = Regex.Replace(script, @"[\ \t]* [|][2} [\ \t]*", " || ", RegexOptions.IgnorePatternWhitespace);
-
-            script = basic + declearment + "\r\n" + script + "\r\n}\r\n}";
+            if (script != null)
+            {
+                script = Regex.Replace(script, @"[\ \t]* [,] [\ \t]*", ", ", RegexOptions.IgnorePatternWhitespace);
+                script = Regex.Replace(script, @"[\ \t]* [+] [\ \t]*", " + ", RegexOptions.IgnorePatternWhitespace);
+                script = Regex.Replace(script, @"[\ \t]* [-] [\ \t]*", " - ", RegexOptions.IgnorePatternWhitespace);
+                script = Regex.Replace(script, @"[\ \t]* [*] [\ \t]*", " * ", RegexOptions.IgnorePatternWhitespace);
+                script = Regex.Replace(script, @"[\ \t]* [/] [\ \t]*", " / ", RegexOptions.IgnorePatternWhitespace);
+                script = Regex.Replace(script, @"[\ \t]* [=] [\ \t]*", " = ", RegexOptions.IgnorePatternWhitespace);
+                script = Regex.Replace(script, @"[\ \t]* [&]{2} [\ \t]*", " && ", RegexOptions.IgnorePatternWhitespace);
+                script = Regex.Replace(script, @"[\ \t]* [|][2} [\ \t]*", " || ", RegexOptions.IgnorePatternWhitespace);
+            }
+                script = basic + declearment + CR + script + CR + "}" + CR + "}";
+            #endregion
 
             return script;
         }
 
-        /// <summary>
-        /// return type of token
-        /// </summary>
-        /// <param name="token">token string</param>
-        /// <returns>type of token</returns>
-        private static TokenType Analyse(string token)
+        private static TokenType Analyse(string token, bool first, bool last)
         {
-            
-
-            if (token == "<")
-                return TokenType.StartOfTag;
-            if (token == ">")
-                return TokenType.EndOfTag;
+            #region Token Type Matching
+            if (first)
+            {
+                if (token == "<")
+                    return TokenType.StartOfTag;
+            }
+            if (last)
+            {
+                if (token == ">")
+                    return TokenType.EndOfTag;
+            }
 
             if (token == "label")
                 return TokenType.LabelDeclear;
@@ -252,16 +282,14 @@ namespace NullScripter.Script
                 return TokenType.Numeric;
             
             return TokenType.Text;
+            #endregion
         }
-
-        /// <summary>
-        /// Parse with list
-        /// </summary>
-        /// <param name="list">list of TokenType</param>
-        /// <returns>type of syntax</returns>
         private static SyntaxType Parse(List<TokenType> list)
         {
-            if (list[0] == TokenType.StartOfTag &&
+            #region Parsing
+#warning Scaffoldings....
+            if (list.Count == 4 &&
+                list[0] == TokenType.StartOfTag &&
                 list[1] == TokenType.LabelDeclear &&
                 list[2] == TokenType.Literal &&
                 list[3] == TokenType.EndOfTag)
@@ -282,23 +310,22 @@ namespace NullScripter.Script
                 return SyntaxType.NumericDeclear;
             }
 
-
+            if (list.Count > 7 && 
+                list[0] == TokenType.StartOfTag && list[1] == TokenType.Function && list[2] == TokenType.RelativeOperator &&
+                list[list.Count - 4] == TokenType.RelativeOperator && list[list.Count - 2] == TokenType.Function && list[list.Count - 1] == TokenType.EndOfTag)
+                return SyntaxType.FunctionCall;
+            #endregion
+            #region Exception
             throw new CompileError(CompileError.ErrorType.Syntax_Error);
+            #endregion
         }
-
-        /// <summary>
-        /// Generates JAVA code
-        /// </summary>
-        /// <param name="type">Type of syntax</param>
-        /// <param name="list">List of token type</param>
-        /// <param name="mc">Original string packet</param>
-        /// <returns>JAVA code</returns>
         private static string GenerateCode (SyntaxType type, List<TokenType> list, MatchCollection mc)
         {
+            string value = null;
             string packet = null;
-
             switch (type)
             {
+                #region Label Declarement
                 case SyntaxType.LabelDeclear:
                     if (firstfunction)
                     {
@@ -309,17 +336,18 @@ namespace NullScripter.Script
                        packet = CR + "}" + CR + "void " + mc[2].Value + "()" + CR + "{" + CR;
 
                     break;
-
+                #endregion
+                #region Numeric Variable declarement
                 case SyntaxType.NumericDeclear:
                     if (VariableTable.ContainsKey(mc[0].Groups[1].Value) && VariableTable[mc[0].Groups[1].Value] == VariableType.String)
                         throw new CompileError(CompileError.ErrorType.Duplicated_Declear);
 
-                    if (!VariableTable.ContainsKey(mc[0].Groups[1].Value))
-                        VariableTable.Add(mc[0].Groups[1].Value, VariableType.Double);
-
                     for (int i = 2; i < list.Count; i++)
                         if (list[i] == TokenType.Variable && VariableTable.ContainsKey(mc[i].Groups[1].Value) == false)
                             throw new CompileError(CompileError.ErrorType.Unknown_Variable);
+
+                    if (!VariableTable.ContainsKey(mc[0].Groups[1].Value))
+                        VariableTable.Add(mc[0].Groups[1].Value, VariableType.Double);
 
                     foreach (Match e in mc)
                         packet += e.Value;
@@ -327,7 +355,8 @@ namespace NullScripter.Script
                     packet = CR + packet.Replace("$", "_");
                     packet += ";" + CR;
                     break;
-
+                #endregion
+                #region Literal Declarement
                 case SyntaxType.LiteralDeclear:
                     if (VariableTable.ContainsKey(mc[0].Groups[1].Value) && VariableTable[mc[0].Groups[1].Value] == VariableType.Double)
                         throw new CompileError(CompileError.ErrorType.Duplicated_Declear);
@@ -335,17 +364,31 @@ namespace NullScripter.Script
                     if (!VariableTable.ContainsKey(mc[0].Groups[1].Value))
                         VariableTable.Add(mc[0].Groups[1].Value, VariableType.String);
 
-                    packet = mc[0].Value.Replace("$", "_") + "=\"" + mc[2].Groups[1].Value + "\";\r\n";
+                    packet = mc[0].Value.Replace("$", "_") + "=\"" + mc[2].Groups[1].Value + "\";" + CR;
                     break;
+                #endregion
+                #region Function Call
+                case SyntaxType.FunctionCall:
+                    for (int i = 3; i < mc.Count - 4; i++ )
+                    {
+                        if (mc[i].Groups[0].Value == "$value ")
+                            value = mc[i + 2].Groups[0].Value;
+                    }
 
+                    if (value != null)
+                       packet = "layopt(" + value + ");";
+                    break;
+                #endregion
+                #region Exception
                 default:
                     throw new NotImplementedException();
+                #endregion
             }
-
             return packet;
         }
     }
 
+    #region Exception Class
     class CompileError : Exception
     {
         public int col;
@@ -370,6 +413,7 @@ namespace NullScripter.Script
         }
     }
 
+    [Serializable]
     class CompileErrorCollection : Exception
     {
         public List<CompileError> list;
@@ -398,4 +442,5 @@ namespace NullScripter.Script
             list.Add(ce);
         }
     }
+#endregion
 }

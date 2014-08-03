@@ -10,19 +10,26 @@ namespace NullScripter.Script
 {
     class NullScriptProject
     {
+        #region Declearing Variables
         public string path;
         public string ProjectName;
+        #endregion
 
         public NullScriptProject (string filepath)
         {
+            #region Read .nsp File
+            Debug.WriteLine("Opening " + filepath);
+
             StreamReader sr = new StreamReader(filepath);
             this.path = Path.GetDirectoryName(filepath);
 
-            XmlReader xr = XmlReader.Create(new StringReader(sr.ReadToEnd()));
-            
-            xr.ReadToFollowing("Project");                
-            xr.MoveToFirstAttribute();
-            this.ProjectName = xr.Value;
+            using (XmlReader xr = XmlReader.Create(new StringReader(sr.ReadToEnd())))
+            { 
+                xr.ReadToFollowing("Project");                
+                xr.MoveToFirstAttribute();
+                this.ProjectName = xr.Value;
+            }
+            #endregion
         }
     }
 
