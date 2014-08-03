@@ -12,7 +12,6 @@ namespace NullScripter
     public partial class DebugForm : Form
     {
         private static System.Diagnostics.Stopwatch sw;
-        private static System.Diagnostics.TextWriterTraceListener listener;
 
         public DebugForm()
         {
@@ -37,7 +36,7 @@ namespace NullScripter
 #endif
             #endregion
         }
-        public void CR()
+        public void CarriageReturn()
         {
             #region Carriage Return
 #if DEBUG
@@ -74,9 +73,9 @@ namespace NullScripter
         {
             debugform.WriteLine(str);
         }
-        public static void CR()
+        public static void CarriageReturn()
         {
-            debugform.CR();
+            debugform.CarriageReturn();
         }
         #endregion
     }

@@ -22,14 +22,14 @@ namespace NullScripter
 
             Debugger.Initialize();
             Debugger.WriteLine("NullScripter is On.");
-            Debugger.CR();
+            Debugger.CarriageReturn();
 #if DEBUG
             Debugger.Show();
 #endif
 
             Application.Run(new NullScripter.GUI.MainForm());
 
-            Debugger.CR();
+            Debugger.CarriageReturn();
             Debugger.WriteLine("NullScripter is Off.");
         }
     }

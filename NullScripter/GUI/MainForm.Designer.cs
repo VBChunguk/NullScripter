@@ -186,6 +186,7 @@
             this.FileTreeView.Name = "FileTreeView";
             this.FileTreeView.Size = new System.Drawing.Size(194, 315);
             this.FileTreeView.TabIndex = 0;
+            this.FileTreeView.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.FileTreeView_NodeMouseClick);
             this.FileTreeView.NodeMouseDoubleClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.FileTreeView_NodeMouseDoubleClick);
             // 
             // Splitter1

@@ -12,10 +12,16 @@ namespace NullScripter.Script
     {
         #region Declarement
         public Font font;
+        public const string SettingVersion = "alpha.1.03";
         #endregion
 
         public NullScripterSetting()
         {
+            ReadSetting();
+        }
+        public void ReadSetting()
+        {
+            
             #region Exception Check
             if (!File.Exists("Setting.set"))
                 CreateSetting();
@@ -26,7 +32,17 @@ namespace NullScripter.Script
             using (XmlReader xr = XmlReader.Create("Setting.set"))
             {
                 xr.ReadToFollowing("NullScripter");
-                
+                xr.MoveToFirstAttribute();
+                Debugger.WriteLine("Setting Version " + xr.Value);
+                if (xr.Value != SettingVersion)
+                {
+                    Debugger.WriteLine("Setting File is Out of date");
+                    xr.Close();
+                    CreateSetting();
+                    ReadSetting();
+                    return;
+                }
+
                 xr.ReadToFollowing("Font");
                 xr.MoveToFirstAttribute();
                 string fontname = xr.Value;
@@ -36,6 +52,7 @@ namespace NullScripter.Script
 
                 Debugger.WriteLine("Font : " + font.Name + ", " + font.Size.ToString());
             }
+            Debugger.CarriageReturn();
             #endregion
         }
 
@@ -56,6 +73,7 @@ namespace NullScripter.Script
             using (XmlWriter xw = XmlWriter.Create(File.Create("Setting.set"), xmlsetting))
             {
                 xw.WriteStartElement("NullScripter");
+                xw.WriteAttributeString("Version", SettingVersion.ToString());
 
                 xw.WriteStartElement("Font");
                 xw.WriteAttributeString("Name", font.Name);

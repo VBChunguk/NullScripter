@@ -54,7 +54,7 @@ namespace NullScripter.Script
         public string Compile(string str)
         {
             #region Initializing
-            Debugger.CR();
+            Debugger.CarriageReturn();
             Debugger.WriteLine("Compiling...");
             firstfunction = true;
 
@@ -141,7 +141,7 @@ namespace NullScripter.Script
             if (chunk != null)
                 scriptchunk.Add(chunk);
 
-            Debugger.CR();
+            Debugger.CarriageReturn();
             Debugger.WriteLine("Reformed Script :");
             foreach (string e in scriptchunk)
                 Debugger.WriteLine(e);
@@ -169,7 +169,7 @@ namespace NullScripter.Script
                         typelist.Add(Analyse(token, i == 0, i == mc.Count - 1));
                     }
 
-                    Debugger.CR();
+                    Debugger.CarriageReturn();
                     Debugger.WriteLine("TypeList of " + element);
                     foreach (TokenType e in typelist)
                         Debugger.WriteLine(e.ToString());
@@ -191,7 +191,7 @@ namespace NullScripter.Script
 
             #endregion
             #region Compile Error Handing
-            Debugger.CR();
+            Debugger.CarriageReturn();
             if (crashed)
             {
                 Debugger.WriteLine("Crashed.");
@@ -235,7 +235,13 @@ namespace NullScripter.Script
                 script = Regex.Replace(script, @"[\ \t]* [&]{2} [\ \t]*", " && ", RegexOptions.IgnorePatternWhitespace);
                 script = Regex.Replace(script, @"[\ \t]* [|][2} [\ \t]*", " || ", RegexOptions.IgnorePatternWhitespace);
             }
-                script = basic + declearment + CR + script + CR + "}" + CR + "}";
+
+            script = basic + declearment + CR + script + CR + "}" + CR + "}";
+            #endregion
+
+            #region Debugging
+            Debugger.WriteLine("Result :\r\n" + script);
+            Debugger.CarriageReturn();
             #endregion
 
             return script;
