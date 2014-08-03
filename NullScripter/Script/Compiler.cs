@@ -54,8 +54,8 @@ namespace NullScripter.Script
         public string Compile(string str)
         {
             #region Initializing
-            Debug.CR();
-            Debug.WriteLine("Compiling...");
+            Debugger.CR();
+            Debugger.WriteLine("Compiling...");
             firstfunction = true;
 
             bool crashed = false;
@@ -141,10 +141,10 @@ namespace NullScripter.Script
             if (chunk != null)
                 scriptchunk.Add(chunk);
 
-            Debug.CR();
-            Debug.WriteLine("Reformed Script :");
+            Debugger.CR();
+            Debugger.WriteLine("Reformed Script :");
             foreach (string e in scriptchunk)
-                Debug.WriteLine(e);
+                Debugger.WriteLine(e);
             #endregion
 
             #region Compiling
@@ -169,14 +169,14 @@ namespace NullScripter.Script
                         typelist.Add(Analyse(token, i == 0, i == mc.Count - 1));
                     }
 
-                    Debug.CR();
-                    Debug.WriteLine("TypeList of " + element);
+                    Debugger.CR();
+                    Debugger.WriteLine("TypeList of " + element);
                     foreach (TokenType e in typelist)
-                        Debug.WriteLine(e.ToString());
+                        Debugger.WriteLine(e.ToString());
 
                     // Generate Code
                     packet = GenerateCode(Parse(typelist), typelist, mc);
-                    Debug.WriteLine("Generated Packet : " + packet);
+                    Debugger.WriteLine("Generated Packet : " + packet);
                 }
                 catch (CompileError e)
                 {
@@ -191,14 +191,14 @@ namespace NullScripter.Script
 
             #endregion
             #region Compile Error Handing
-            Debug.CR();
+            Debugger.CR();
             if (crashed)
             {
-                Debug.WriteLine("Crashed.");
+                Debugger.WriteLine("Crashed.");
                 throw cec;
             }
             else
-                Debug.WriteLine("Compiled.");
+                Debugger.WriteLine("Compiled.");
             #endregion
 
             #region Declarement Handling

@@ -18,7 +18,7 @@ namespace NullScripter.Script
         public NullScriptProject (string filepath)
         {
             #region Read .nsp File
-            Debug.WriteLine("Opening " + filepath);
+            Debugger.WriteLine("Opening " + filepath);
 
             StreamReader sr = new StreamReader(filepath);
             this.path = Path.GetDirectoryName(filepath);

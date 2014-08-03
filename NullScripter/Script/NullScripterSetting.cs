@@ -22,7 +22,7 @@ namespace NullScripter.Script
             #endregion
 
             #region Read .set File
-            Debug.WriteLine("Opening Setting File");
+            Debugger.WriteLine("Opening Setting File");
             using (XmlReader xr = XmlReader.Create("Setting.set"))
             {
                 xr.ReadToFollowing("NullScripter");
@@ -34,7 +34,7 @@ namespace NullScripter.Script
                 string fontsize = xr.Value;
                 this.font = new Font(fontname, float.Parse(fontsize));
 
-                Debug.WriteLine("Font : " + font.Name + ", " + font.Size.ToString());
+                Debugger.WriteLine("Font : " + font.Name + ", " + font.Size.ToString());
             }
             #endregion
         }

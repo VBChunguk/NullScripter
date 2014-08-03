@@ -260,8 +260,15 @@ namespace NullScripter.GUI
         }
         private void Setting()
         {
+            #region Setting
             if ((new Setting(nss)).ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
                 nss = new NullScripterSetting();
+            
+                foreach (TabPage tp in ScriptTab.TabPages)
+                    tp.Controls[0].Font = nss.font;
+            }
+            #endregion
         }
         
         private void FileTreeView_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
@@ -279,6 +286,7 @@ namespace NullScripter.GUI
             box.Multiline = true;
             box.Dock = DockStyle.Fill;
             box.Font = nss.font;
+            box.ScrollBars = ScrollBars.Vertical;
 
             tab.Controls.Add(box);
             ScriptTab.Controls.Add(tab);

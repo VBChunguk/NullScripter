@@ -15,20 +15,22 @@ namespace NullScripter
         [STAThread]
         static void Main()
         {
-            Debug.Init();
-
             StringMap.Init(StringMap.Language.kr);
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Debug.WriteLine("NullScripter is On.");
-            Debug.CR();
+            Debugger.Initialize();
+            Debugger.WriteLine("NullScripter is On.");
+            Debugger.CR();
+#if DEBUG
+            Debugger.Show();
+#endif
 
             Application.Run(new NullScripter.GUI.MainForm());
 
-            Debug.CR();
-            Debug.WriteLine("NullScripter is Off.");
+            Debugger.CR();
+            Debugger.WriteLine("NullScripter is Off.");
         }
     }
 }
