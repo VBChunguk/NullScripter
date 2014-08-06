@@ -14,10 +14,10 @@ namespace NullScripter.Script
     class Compiler
     {
         #region Declarement
-        private static List<string> FunctionList;
-        private static Dictionary<string, VariableType> VariableTable;
-        private static bool firstfunction;
-        private static string CR = "\r\n";
+        private List<string> FunctionList;
+        private Dictionary<string, VariableType> VariableTable;
+        private bool firstfunction;
+        private const string CR = "\r\n";
 
         private enum VariableType
         { Double, String }
@@ -97,12 +97,12 @@ namespace NullScripter.Script
             {
                 string temp = element.Groups[1].Value;
                 // Checking Blank Column
-                if (Regex.IsMatch(temp, @"^\s*$"))
+                if (string.IsNullOrEmpty(temp))
                     continue;
 
-                if (Regex.IsMatch(temp, "<.+?>") && !Regex.IsMatch(temp, "< label"))
+                if (Regex.IsMatch(temp, "<.+?>") && !temp.StartsWith("< label"))
                 {
-                    string testpacket = Regex.Match(temp, "<(.+?)>").Groups[1].Value;
+                    string testpacket = Regex.Match(temp, "<(.+?)>").Groups[1].Value.Trim();
 
                     //Opening Function
                     if (!Regex.IsMatch(testpacket, "/"))
@@ -148,6 +148,7 @@ namespace NullScripter.Script
             #endregion
 
             #region Compiling
+            StringBuilder scriptBuilder = new StringBuilder();
             foreach (string element in scriptchunk)
             {
                 try
@@ -156,7 +157,7 @@ namespace NullScripter.Script
                     col++;
 
                     // Checking Blank Column
-                    if (Regex.IsMatch(element, @"^  \s*  $", RegexOptions.IgnorePatternWhitespace))
+                    if (string.IsNullOrWhiteSpace(element))
                         continue;
 
                     MatchCollection mc = SPRegex.Matches(element + " ");
@@ -186,9 +187,9 @@ namespace NullScripter.Script
                     cec.Add(e);
                 }
 
-                script += packet;
+                scriptBuilder.Append(packet);
             }
-
+            script = scriptBuilder.ToString();
             #endregion
             #region Compile Error Handing
             Debugger.CarriageReturn();
@@ -202,6 +203,7 @@ namespace NullScripter.Script
             #endregion
 
             #region Declarement Handling
+            StringBuilder declarement = new StringBuilder();
             foreach (KeyValuePair<string, VariableType> e in VariableTable)
             {
                 switch(e.Value)
@@ -217,8 +219,7 @@ namespace NullScripter.Script
                     default:
                         throw new NotImplementedException();
                 }
-
-                declearment += e.Key.Replace("$", "_") + ";" + CR;
+                declarement.AppendFormat("{0};{1}", e.Key.Replace("$", "_"), CR);
             }
             #endregion
 
@@ -236,7 +237,7 @@ namespace NullScripter.Script
                 script = Regex.Replace(script, @"[\ \t]* [|][2} [\ \t]*", " || ", RegexOptions.IgnorePatternWhitespace);
             }
 
-            script = basic + declearment + CR + script + CR + "}" + CR + "}";
+            script = string.Format("{0}{1}{3}{2}{3}\\}{3}\\}", basic, declarement.ToString(), script, CR);
             #endregion
 
             #region Debugging
@@ -247,7 +248,7 @@ namespace NullScripter.Script
             return script;
         }
 
-        private static TokenType Analyse(string token, bool first, bool last)
+        private TokenType Analyse(string token, bool first, bool last)
         {
             #region Token Type Matching
             if (first)
@@ -325,21 +326,22 @@ namespace NullScripter.Script
             throw new CompileError(CompileError.ErrorType.Syntax_Error);
             #endregion
         }
-        private static string GenerateCode (SyntaxType type, List<TokenType> list, MatchCollection mc)
+        private string GenerateCode (SyntaxType type, List<TokenType> list, MatchCollection mc)
         {
             string value = null;
             string packet = null;
+            StringBuilder packetBuilder = new StringBuilder();
             switch (type)
             {
                 #region Label Declarement
                 case SyntaxType.LabelDeclear:
                     if (firstfunction)
                     {
-                        packet = CR + "void " + mc[2].Value + "()" + CR + "{" + CR;
+                        packet = string.Format("{1}void {0}(){1}\\{{1}", mc[2].Value, CR);
                         firstfunction = false;
                     }
                     else
-                       packet = CR + "}" + CR + "void " + mc[2].Value + "()" + CR + "{" + CR;
+                        packet = string.Format("{1}\\}{1}void {0}(){1}\\{{1}", mc[2].Value, CR);
 
                     break;
                 #endregion
@@ -358,8 +360,7 @@ namespace NullScripter.Script
                     foreach (Match e in mc)
                         packet += e.Value;
 
-                    packet = CR + packet.Replace("$", "_");
-                    packet += ";" + CR;
+                    packet = string.Format("{1}{0};{1}", packet.Replace('$', '_'), CR);
                     break;
                 #endregion
                 #region Literal Declarement
@@ -370,7 +371,7 @@ namespace NullScripter.Script
                     if (!VariableTable.ContainsKey(mc[0].Groups[1].Value))
                         VariableTable.Add(mc[0].Groups[1].Value, VariableType.String);
 
-                    packet = mc[0].Value.Replace("$", "_") + "=\"" + mc[2].Groups[1].Value + "\";" + CR;
+                    packet = string.Format("{0}=\"{1}\";{2}", mc[0].Value.Replace("$", "_"), mc[2].Groups[1].Value, CR);
                     break;
                 #endregion
                 #region Function Call
@@ -382,7 +383,7 @@ namespace NullScripter.Script
                     }
 
                     if (value != null)
-                       packet = "layopt(" + value + ");";
+                       packet = string.Format("layopt({0});", value);
                     break;
                 #endregion
                 #region Exception
